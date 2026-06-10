@@ -7,7 +7,22 @@
 
 // | Cabeçalho das funções que serão utilizadas durante a execução do programa |
 
-int verificar_extensao(char *,char [4]);
+typedef struct no_arvore{
+    struct no_arvore *esquerda;
+    struct no_arvore *direita;
+    int peso;
+    int indice;
+}No_arvore;
+
+typedef struct no_lista{
+    struct no_lista *proximo;
+    int peso;
+    int indice;
+}No_lista;
+
+int verificar_extensao(char *,char *);
+
+No_lista *preparador_noLista(int,int);
 
 // | ------------------------------------------------------------------------- |
 
@@ -19,7 +34,7 @@ int main(int argc,char *argv[]){ //Função main sendo chamada com os argumentos
         printf("Utilize a quantidade de argumentos correta para a execução devida do programa, sendo 3 argumentos e não %i como foi utilizado.\n",argc);
         printf("Exemplo: \"./manipulador -c texto.txt\"\n");
         printf("\n");    
-        exit;
+        exit(1);
     }
     else{ // Passando pela validação da quantidade de argumentos agora vamos tratar as tags.
 
@@ -32,43 +47,63 @@ int main(int argc,char *argv[]){ //Função main sendo chamada com os argumentos
                 printf("Utilize uma extensão de arquivo adequada para utilização do programa de compactação, sendo ela \".txt\";\n");
                 printf("Exemplo: \"./manipulador -c texto.txt\"\n");
                 printf("\n");
-                exit;
+                exit(1);
             }
             else{
                 FILE *leitor_arquivo_txt = fopen(argv[2],"rb");
 
-                unsigned char leitor[sizeof(leitor_arquivo_txt)];
+                if(!leitor_arquivo_txt){
+                    printf("Erro ao abrir o arquivo: %s.\n",argv[2]);
+                    exit(1);
+                }
+                
+                fseek(leitor_arquivo_txt,0,SEEK_END);
+                long tamanho_arquivo = ftell(leitor_arquivo_txt); 
+                fseek(leitor_arquivo_txt,0,SEEK_SET);
 
-                size_t tamanho_arquivo = fread(leitor,1,sizeof(leitor_arquivo_txt),leitor_arquivo_txt);
+                unsigned char *leitor = malloc(tamanho_arquivo);
+
+                if(!leitor){
+                    printf("Erro ao alocar memória.\n");
+                    fclose(leitor_arquivo_txt);
+                    exit(1);
+                }
+
+                size_t extensao_arquivo = fread(leitor,1,tamanho_arquivo,leitor_arquivo_txt);
                 
                 int contador_caracteres[BUFFER_SIZE]={0};
 
-                for(size_t i = 0; i < tamanho_arquivo;i++){
+                for(size_t i = 0; i < extensao_arquivo;i++){
                     contador_caracteres[leitor[i]]++;
                 }
 
-                for(int i = 0; i < 256;i++){
-                   if(contador_caracteres[i] != 0)printf("caracter de número %i : %c -> %i\n",i,i,contador_caracteres[i]);
+                fclose(leitor_arquivo_txt);
+                free(leitor);
+
+                No_lista *cabeca_lista = NULL;
+                for(int i = 0; i < BUFFER_SIZE;i++){
+                    if(contador_caracteres[i]!=0){
+                        if(cabeca_lista == NULL){
+                            cabeca_lista = preparador_noLista(i,contador_caracteres[i]);
+                        }
+                        else{
+                            No_lista *aux = cabeca_lista;
+                            cabeca_lista = preparador_noLista(i,contador_caracteres[i]);
+                            cabeca_lista->proximo = aux;
+                        }
+                    }
                 }
-
-
-
-
-
-
-
-
-
             }
+            
         }
         else if(strcmp(tag,"-d") == 0){  // Verificamos se a tag que está sendo chamada é a de descompactação de arquivo, sendo ela o "-d".
 
             if(!verificar_extensao(argv[2],".ggc")){ // Verificamos se o arquivo a ser descompactado é da extensão ".ggc" que é a única permitida no nosso programa, sendo um antigo arquivo ".txt" que já passou por uma compactação do nosso programa.
                 printf("\n");
                 printf("Utilize uma extensão de arquivo adequada para utilização do programa de compactação, sendo ela \".ggc\";\n");
-                printf("Exemplo: \"./manipulador -c texto.ggc\"\n");
+                printf("Exemplo: \"./manipulador -d texto.ggc\"\n");
                 printf("\n");
-                exit;
+                exit(1);
             }
             else{
                 printf("Tamo descompactando!\n"); // <--------------------- JESUS SUA PARTE É AQUI
@@ -81,18 +116,28 @@ int main(int argc,char *argv[]){ //Função main sendo chamada com os argumentos
             printf("\"-c\"-> Para compactação de arquivos cuja extenção é .txt - (Exemplo: \"./manipulador -c texto.txt\");\n");
             printf("\"-d\"-> Para descompactar um arquivo que já foi compactado nesse programa- (Exemplo: \"./manipulador -d compactado.ggc\");\n");
             printf("\n");
-            exit;
+            exit(1);
         }
     }
 
     return 0;
 }
 
-int verificar_extensao(char *arquivo_verificado, char comparador[4]){
+int verificar_extensao(char *arquivo_verificado, char *comparador){
     char *verificador = strrchr(arquivo_verificado,'.');
     if(verificador == NULL || (strcmp(verificador,comparador) != 0)){
         return 0;
     }
     
     return 1;
+}
+
+No_lista *preparador_noLista(int indice, int peso){
+    No_lista *novo;
+    novo = (No_lista *)malloc(sizeof(No_lista));
+    novo->proximo = NULL;
+    novo->peso = peso;
+    novo->indice = indice;
+
+    return novo;
 }
