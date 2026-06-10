@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
+
+#define BUFFER_SIZE 256
 
 // | Cabeçalho das funções que serão utilizadas durante a execução do programa |
 
@@ -32,7 +35,30 @@ int main(int argc,char *argv[]){ //Função main sendo chamada com os argumentos
                 exit;
             }
             else{
-                printf("Tamo compactando!\n");
+                FILE *leitor_arquivo_txt = fopen(argv[2],"rb");
+
+                unsigned char leitor[sizeof(leitor_arquivo_txt)];
+
+                size_t tamanho_arquivo = fread(leitor,1,sizeof(leitor_arquivo_txt),leitor_arquivo_txt);
+                
+                int contador_caracteres[BUFFER_SIZE]={0};
+
+                for(size_t i = 0; i < tamanho_arquivo;i++){
+                    contador_caracteres[leitor[i]]++;
+                }
+
+                for(int i = 0; i < 256;i++){
+                   if(contador_caracteres[i] != 0)printf("caracter de número %i : %c -> %i\n",i,i,contador_caracteres[i]);
+                }
+
+
+
+
+
+
+
+
+
             }
         }
         else if(strcmp(tag,"-d") == 0){  // Verificamos se a tag que está sendo chamada é a de descompactação de arquivo, sendo ela o "-d".
